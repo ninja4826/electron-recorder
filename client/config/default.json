@@ -1,0 +1,8 @@
+{
+    "Client": {
+        "bandName": "Scars Heal in Time"
+    },
+    "debug": false,
+    "sassPath": "./src/sass",
+    "bowerDir": "./bower_components"
+}

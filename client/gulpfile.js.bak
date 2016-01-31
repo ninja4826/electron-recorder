@@ -1,0 +1,237 @@
+var gulp = require('gulp');
+var sass = require('gulp-sass');
+var bower = require('gulp-bower');
+var babel = require('gulp-babel');
+var fs = require('fs');
+var path = require('path');
+var del = require('del');
+var jsonfile = require('jsonfile');
+var merge = require('merge-stream');
+var zip = require('gulp-zip');
+var ignore = require('gulp-ignore');
+var foreach = require('gulp-foreach');
+var config = require('config');
+var packager = require('electron-packager');
+var gutil = require('gulp-util');
+var pjson = require('./package.json');
+var browserify = require('browserify');
+var babelify = require('babelify');
+var glob = require('glob');
+var source = require('vinyl-source-stream');
+var argv = require('yargs').argv;
+var debug = require('gulp-debug');
+// var gulpsync = require('gulp-sync')(gulp);
+var runSeq = require('run-sequence');
+var cProcess = require('child_process');
+var execSync = cProcess.execSync;
+var spawn = cProcess.spawn;
+
+jsonfile.spaces = "\t";
+
+var paths = {
+    sass: "./src/sass",
+    bower: "./bower_components"
+};
+
+gulp.task('bower', function() {
+    return bower().pipe(gulp.dest(paths.bower));
+});
+
+gulp.task('icons', function() {
+    return gulp.src(paths.bower + '/fontawesome/fonts/**.*')
+        .pipe(gulp.dest('./dist/fonts'));
+});
+
+gulp.task('css', function() {
+    return gulp.src(paths.sass + '/style.scss').pipe(sass({
+        // outputStyle: 'compressed',
+        includePaths: [
+            paths.sass,
+            paths.bower + '/bootstrap-sass/assets/stylesheets',
+            paths.bower + '/fontawesome/scss',
+        ]
+    })).pipe(gulp.dest('./dist/css'));
+});
+
+gulp.task('babel', function() {
+    // return gulp.src('src/js/*.js').pipe(babel({
+    //         presets: ['es2015']
+    //     })).pipe(gulp.dest('dist/js'));
+    var srcFiles = glob.sync('./src/js/**/*.js');
+    return browserify({ entries: srcFiles })
+        .transform("babelify", { presets: ['es2015'] })
+        .transform("config-browserify")
+        .bundle()
+        .pipe(source('bundle.js'))
+        .pipe(gulp.dest('dist/js'));
+});
+
+gulp.task('jx_pack', function() {
+    return del([
+        'recorder.installed',
+        'recorder.exe',
+        'recorder.jx',
+        'recorder.jxp'
+    ]).then(function() {
+        var igDirs = ['build', 'src', 'bower_components'];
+
+        var includedDeps = [
+            'config',
+            'attachmediastream',
+            'getusermedia',
+            'video-recorder',
+            'electron-prebuilt'
+        ];
+
+        var nodeDeps = fs.readdirSync('./node_modules').filter(function(file) {
+            if (includedDeps.indexOf(file) !== -1) return false;
+            // if (file === 'attachmediastream') return false;
+            return fs.statSync(path.join('./node_modules', file)).isDirectory();
+        });
+        igDirs = igDirs.concat(nodeDeps);
+        var cmd = [
+            'jx',
+            'package',
+            'run.js',
+            '"recorder"',
+            '--slim',
+            // ['buid', 'src', 'bower_components', 'node_modules'].join(','),
+            igDirs.join(','),
+            '--show-progress',
+            'percent',
+        ];
+        if (!config.get('debug')) {
+            cmd.push('--native');
+        }
+        execSync(cmd.join(' '));
+        var jxp = jsonfile.readFileSync('./recorder.jxp');
+        var bins = [];
+        var binNames = ['electron', 'electron.cmd'];
+        for (var bin of binNames) {
+            bins.push('node_modules\\.bin\\'+bin);
+        }
+        jxp.assets = jxp.assets.concat(bins);
+        // jxp.preInstall = [
+    	// 	"jx install config",
+    	// 	"jx install getusermedia",
+    	// 	"jx install video-recorder",
+    	// 	"jx install electron-prebuilt"
+        // ];
+        return jsonfile.writeFileSync('./recorder.jxp', jxp);
+    }).then(function() {
+        return execSync([ 'jx', 'compile', 'recorder.jxp' ].join(' '));
+    });
+});
+
+gulp.task('jx_compile', function(cb) {
+    var stdout = execSync([ 'jx', 'compile', 'recorder.jxp', ].join(' '));
+    console.log(stdout.toString());
+    cb();
+});
+
+gulp.task('build', ['bower', 'icons', 'css', 'babel']);
+
+gulp.task('package-clean', function() {
+    console.log(JSON.stringify(argv, null, 2));
+    if (arg.clean) {
+        var builds = glob.sync('./build/**/*');
+        return del(builds).then(function(paths) {
+            console.log('Deleted '+paths.length+' files.');
+        });
+    }
+    return;
+});
+
+gulp.task('package-make', function(cb) {
+    console.log(JSON.stringify(argv, null, 2));
+    var igDirs = ['build', 'src', 'bower_components'];
+    // var includedDeps = [
+    //     'config',
+    //     'attachmediastream',
+    //     'getusermedia',
+    //     'video-recorder'
+    // ];
+    var nodeDeps = fs.readdirSync('./node_modules').filter(function(file) {
+        // if (includedDeps.indexOf(file) !== -1) return false;
+        if (pjson.dependencies.indexOf(file) !== -1) return false;
+        return fs.statSync(path.join('./node_modules', file)).isDirectory();
+    });
+    igDirs = igDirs.concat(nodeDeps);
+    var opts = {
+        arch: 'all',
+        dir: __dirname,
+        name: pjson.name,
+        platform: 'win32',
+        out: 'build/',
+        overwrite: true,
+        ignore: new RegExp('(build|src|bower_components|node_modules/('+igDirs.join('|')+'))')
+    };
+    packager(opts, function(err, appPath) {
+        if (err) throw err;
+        gutil.log('Application has been packaged at: ' + appPath);
+        cb();
+    });
+});
+
+gulp.task('package', gulpsync.sync(['package-clean', 'package-make']));
+
+function getBuilds(deps) {
+    var builds = [];
+    var files = fs.readdirSync('./build')
+        .filter(function(file) {
+            return fs.statSync(path.join('./build', file)).isDirectory();
+        });
+    for (var file of files) {
+        builds.push(path.join('build', file));
+    }
+    console.dir(builds);
+    // return files;
+    return builds;
+}
+
+// gulp.task('zip-make', function() {
+//     var builds = getBuilds();
+//     var zips = builds.map(function(build) {
+//         return gulp.src(path.join(build, '/**'))
+//             .pipe(zip(build+'.zip'))
+//             .pipe(gulp.dest('./'));
+//     });
+//     return merge(zips);
+// });
+
+gulp.task('zip-make', function(cb) {
+    var builds = getBuilds();
+    var cmd = [
+        'rar',                  //0
+        'a',                    //1
+        '-r',                   //2
+        '-sfx',                 //3
+        '-z"../../build.conf"',    //4
+        '', // ../{{build}}     //5
+        '*'                     //6
+    ];
+    var build,
+        dirName,
+        stdout;
+    for (var i = 0; i < builds.length; i++) {
+        build = builds[i];
+        dirName = build.split('\\')[1];
+        cmd[5] = '../'+dirName;
+        stdout = execSync(cmd.join(' '), { cwd: build });
+        console.log('Created Executable:', (build+'.exe'));
+    }
+    cb();
+});
+
+// gulp.task('zip-clean', ['zip-make'], function() {
+gulp.task('zip-clean', function() {
+    var builds = getBuilds();
+    return del(builds).then(function(paths) {
+        console.dir(paths);
+    });
+});
+
+// gulp.task('zip', ['zip-make', 'zip-clean']);
+gulp.task('zip', gulpsync.sync(['zip-make', 'zip-clean']));
+
+gulp.task('default', ['build']);
