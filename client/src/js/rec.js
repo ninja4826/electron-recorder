@@ -82,7 +82,7 @@ class Recorder {
         this.btnStop.on('click', () => {
             var onStopRecording = () => {
                 this.recordAudio.getDataURL((audioDataURL) => {
-                    recordVideo.getDataURL((videoDataURL) => {
+                    this.recordVideo.getDataURL((videoDataURL) => {
                         this.postFiles(audioDataURL, videoDataURL);
                     });
                 });
