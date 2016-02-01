@@ -1,6 +1,5 @@
 import config from 'config';
 import fs from 'fs';
-import sys from 'sys';
 import { exec } from 'child_process';
 import * as express from 'express';
 
@@ -14,7 +13,7 @@ function merge(response, files) {
     let mergedFile = `${process.cwd()}\\uploads\\${files.audio.name.split('.')[0]}-merged.webm`;
 
     let command = `${merger} ${audioFile} ${videoFile} ${mergedFile}`;
-    exec(command, (err, stdout, stderr) => {
+    exec(command, (err) => {
         if (err) {
             console.log(err.stack);
             console.log('Error code:', err.code);
@@ -75,7 +74,7 @@ router.post('/upload', (req, res) => {
         merge(res, files);
     }
     if ('contents' in files) {
-        upload(res, files);
+        _upload(res, files);
     }
 
     // res.json({
