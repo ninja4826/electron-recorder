@@ -69,7 +69,7 @@ class Recorder {
             this.btnStart.prop('disabled', true);
             getUserMedia(this.getSelectedSources(), (err, stream) => {
                 this.videoElement.attr('src', window.URL.createObjectURL(stream));
-                this.videoElement.play();
+                this.videoElement.get(0).play();
                 this.recordAudio = RecordRTC(stream, { bufferSize: 16384 });
                 this.recordVideo = RecordRTC(stream, { type: 'video' });
 
