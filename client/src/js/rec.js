@@ -125,6 +125,7 @@ class Recorder {
             hostName += `:${config.get('Client.port')}`;
         }
         console.log(hostName);
+        console.log(files);
         $.post(`${hostName}/upload`, files, (data) => {
             console.log(data);
             alert('Done!');
