@@ -44,30 +44,6 @@ class Recorder {
                 }
             }
         });
-
-        // MediaStreamTrack.getSources((infos) => {
-        //     console.log(this);
-        //     console.log('ugh');
-        //     for (var i = 0; i < infos.length; i++) {
-        //         var info = infos[i];
-        //         console.log(info);
-        //         var option = $('<option>');
-        //         option.val(info.id);
-        //         var options;
-        //         if (info.kind === 'audio') {
-        //             options = this.audioSelect.find('option');
-        //             option.text(info.label || 'microphone ' + (options.length + 1));
-        //             this.audioSelect.append(option);
-        //         } else if (info.kind === 'video') {
-        //             options = this.videoSelect.find('option');
-        //             option.text(info.label || 'camera ' + (options.length + 1));
-        //             this.videoSelect.append(option);
-        //         } else {
-        //             console.log('Some other kind of source:', info);
-        //         }
-        //         i++;
-        //     }
-        // });
     }
 
     setHandlers() {
@@ -79,12 +55,14 @@ class Recorder {
 
         this.btnStart.on('click', () => {
 
-            if (this.videoSelect.find('options').length < 1) {
-                alert('You have no video devices :(');
+            console.log(this.audioSelect);
+            if (this.audioSelect.find('option').length < 1) {
+                alert('You have no audio devices :(');
                 return;
             }
-            if (this.audioSelect.find('options').length < 1) {
-                alert('You have no audio devices :(');
+            console.log(this.videoSelect);
+            if (this.videoSelect.find('option').length < 1) {
+                alert('You have no video devices :(');
                 return;
             }
 
