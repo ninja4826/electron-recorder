@@ -1,6 +1,8 @@
 {
     "Client": {
-        "bandName": "Scars Heal in Time"
+        "bandName": "Scars Heal in Time",
+        "host": "192.168.2.71",
+        "port": 3000
     },
     "debug": false,
     "sassPath": "./src/sass",

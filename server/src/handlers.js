@@ -103,3 +103,5 @@ function hasMediaType(type) {
 
     return hasType;
 }
+
+export { home, upload, serveStatic };

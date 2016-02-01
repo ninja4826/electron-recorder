@@ -25,16 +25,6 @@ import * as yargs from 'yargs';
 
 const pjson = jsonfile.readFileSync('./package.json');
 
-// const argv = yargs
-//     .boolean('clean')
-//     .boolean('zip')
-//     .boolean('no_zip_clean')
-//     .default({
-//         clean: false,
-//         zip: false,
-//         no_zip_clean: true
-//     }).argv;
-
 const argv = yargs.options({
     c: {
         alias: 'clean',
@@ -110,25 +100,11 @@ gulp.task('package-clean', () => {
 
 gulp.task('package-make', (cb) => {
     let igDirs = ['build', 'src', 'bower_components'];
-    // let includedDeps = [
-    //     'config',
-    //     'attachmediastream',
-    //     'getusermedia',
-    //     'video-recorder'
-    // ];
-
     let pjDeps = Object.keys(pjson.dependencies);
-
     let nodeDeps = fs.readdirSync('./node_modules').filter((file) => {
-        // if (includedDeps.indexOf(file) !== -1) return false;
         if (pjDeps.indexOf(file) !== -1) return false;
         return fs.statSync(path.join('./node_modules', file)).isDirectory();
     });
-    // igDirs = igDirs.concat(nodeDeps);
-
-    // console.log(`igDirs:\n${JSON.stringify(igDirs, null, 2)}`);
-    // console.log(`nodeDeps:\n${JSON.stringify(nodeDeps, null, 2)}`);
-
     let opts = {
         arch: 'all',
         dir: __dirname,
@@ -136,7 +112,6 @@ gulp.task('package-make', (cb) => {
         platform: 'win32',
         out: 'build/',
         overwrite: true,
-        // ignore: new RegExp(`(build|src|bower_components|node_modules/(${igDirs.join('|')}))`)
         ignore: new RegExp(`(${igDirs.join('|')}|node_modules/(${nodeDeps.join('|')}))`)
     };
     packager(opts, (err, appPath) => {
@@ -148,28 +123,12 @@ gulp.task('package-make', (cb) => {
 
 gulp.task('zip-make', (cb) => {
     let builds = glob.sync('build/recorder-win32-*');
-    // var cmd = [
-    //     'rar',
-    //     'a',
-    //     '-r',
-    //     '-sfx',
-    //     '-z"../../build.conf"',
-    //     '',
-    //     '*'
-    // ];
-    // var dirName;
     var arch;
     for (var build of builds) {
         arch = build.split('/')[1].split('-')[2];
-        cmd[5] = `../recorder-${arch}`;
         execSync(`rar a -r -sfx -z"../../build.conf" ../recorder-${arch} *`,{
             cwd: build
         });
-
-        // dirName = build.split('\\')[1];
-        // cmd[5] = `../${dirName}`;
-        // execSync(cmd.join(' '), { cwd: build });
-
         console.log(`Created Executable: build/recorder-${arch}.exe`);
     }
     cb();
@@ -182,16 +141,13 @@ gulp.task('zip-clean', () => {
 
 gulp.task('package', (cb) => {
     var tasks = [];
-    // console.log(JSON.stringify(argv, null, 2));
     if (argv.release) {
         tasks = ['package-clean', 'package-make', 'zip-make', 'zip-clean'];
     } else {
         if (argv.clean) tasks.push('package-clean');
         tasks.push('package-make');
-        // if (argv.zip || argv.zip_clean >= 1) {
         if (argv.zip || argv.no_zip_clean) {
             tasks.push('zip-make');
-            // if (argv.zip_clean === 0) {
             if (!argv.no_zip_clean) {
                 tasks.push('zip-clean');
             }
@@ -200,7 +156,6 @@ gulp.task('package', (cb) => {
     tasks.push(cb);
     console.log(JSON.stringify(tasks, null, 2));
     runSeq(...tasks);
-    // cb();
 });
 
 gulp.task('gutil-test', function(cb) {

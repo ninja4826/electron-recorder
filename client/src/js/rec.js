@@ -106,7 +106,12 @@ class Recorder {
         };
 
         this.videoElement.attr('src', '');
-        $.post('rec.ninja4826.me', files, (data) => {
+        var hostName = config.get('Client.host');
+        if (hostName.split('.').length === 4) {
+            hostName += `:${config.get('Client.port')}`;
+        }
+        $.post(hostName, files, (data) => {
+            console.log(data);
             alert('Done!');
         });
     }

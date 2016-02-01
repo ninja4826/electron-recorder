@@ -19,4 +19,7 @@ export default function start(route, handle) {
     };
 
     http.createServer(onRequest).listen(config.get('port'));
+    console.log('Server started.');
 }
+
+export { start };

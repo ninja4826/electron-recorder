@@ -26,3 +26,5 @@ function route(handle, pathname, response, postData) {
 }
 
 export default route;
+
+export { route };
