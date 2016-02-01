@@ -9,6 +9,7 @@ class Recorder {
         this.videoElement = $('video#videoElement');
         this.btnStart = $('button.btn.btn-success#record_start');
         this.btnStop = $('button.btn.btn-danger#record_stop');
+        this.btnRefresh = $('button.btn.btn-default#refresh');
         this.audioSelect = $('select#audio-select');
         this.videoSelect = $('select#video-select');
         this.recordAudio = undefined;
@@ -18,7 +19,13 @@ class Recorder {
         this.setHandlers();
     }
 
-    getAvailableSources() {
+    getAvailableSources(refresh = false) {
+
+        if (refresh) {
+            this.audioSelect.html('');
+            this.videoSelect.html('');
+        }
+
         MediaStreamTrack.getSources((infos) => {
             console.log(this);
             console.log('ugh');
@@ -46,6 +53,11 @@ class Recorder {
 
     setHandlers() {
         console.log(this);
+
+        this.btnRefresh.on('click', () => {
+            this.getAvailableSources(true);
+        });
+
         this.btnStart.on('click', () => {
 
             if (this.videoSelect.find('options').length < 1) {
