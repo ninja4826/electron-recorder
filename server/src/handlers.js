@@ -10,7 +10,7 @@ function home(response) {
 
 function upload(response, postData) {
     var files = JSON.parse(postData);
-
+    console.log(JSON.stringify(files, null, 2));
     _upload(response, files.audio);
 
     if (files.uploadOnlyAudio) {

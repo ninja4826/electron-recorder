@@ -81,8 +81,11 @@ class Recorder {
 
         this.btnStop.on('click', () => {
             var onStopRecording = () => {
+                console.log('onStopRecording() has been called.');
                 this.recordAudio.getDataURL((audioDataURL) => {
+                    console.log('audioDataURL:', audioDataURL);
                     this.recordVideo.getDataURL((videoDataURL) => {
+                        console.log('videoDataURL:', videoDataURL);
                         this.postFiles(audioDataURL, videoDataURL);
                     });
                 });
@@ -93,6 +96,7 @@ class Recorder {
 
             this.recordAudio.stopRecording(() => {
                 this.recordVideo.stopRecording(() => {
+                    console.log('onStopRecording() is about to be called.');
                     onStopRecording();
                 });
             });
@@ -100,6 +104,7 @@ class Recorder {
     }
 
     postFiles(audioDataURL, videoDataURL) {
+        console.log('Posting files.');
         var fileName = this.slugify(config.get('Client.bandName'));
         var files = {
             audio: {
