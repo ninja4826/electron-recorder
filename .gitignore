@@ -32,6 +32,6 @@ node_modules
 # Optional REPL history
 .node_repl_history
 
-client/dist/*
+client/dist/js/*
+client/dist/css/*
 server/dist/*
-!client/dist/lib
