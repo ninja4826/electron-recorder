@@ -124,6 +124,7 @@ class Recorder {
         if (hostName.split('.').length === 4) {
             hostName += `:${config.get('Client.port')}`;
         }
+        console.log(hostName);
         $.post(hostName, files, (data) => {
             console.log(data);
             alert('Done!');
