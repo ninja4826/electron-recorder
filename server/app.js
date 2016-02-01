@@ -6,9 +6,15 @@ var express = require('express'),
 
 console.log(router);
 var app = express()
-    .use(bodyParser.urlencoded({ extended: true }))
-    .use(bodyParser.json())
-    .use('/', router.router);
+    .use(bodyParser.urlencoded({
+        extended: true,
+        limit: '5gb'
+    })).use(bodyParser.json({
+        limit: '5gb'
+    })).use(function(req, res, next) {
+        console.log(JSON.stringify(req.body, null, 2));
+        next();
+    }).use('/', router.router);
 
 app.listen(config.get('port'), function() {
     console.log('Running on port', config.get('port'));
