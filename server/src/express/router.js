@@ -22,7 +22,8 @@ function merge(response, files) {
         } else {
             console.log('Done merging.');
             response.json({
-                name: `${files.audio.name.split('.')[0]}-merged.webm`
+                audio: files.audio.name,
+                video: files.video.name
             });
         }
     });
@@ -71,16 +72,16 @@ router.post('/upload', (req, res) => {
     }
 
     if ('audio' in files || 'video' in files) {
-        // merge(res, files);
+        merge(res, files);
     }
     if ('contents' in files) {
         upload(res, files);
     }
 
-    res.json({
-        audio: files.audio.name,
-        video: files.video.name
-    });
+    // res.json({
+    //     audio: files.audio.name,
+    //     video: files.video.name
+    // });
     // _upload(res, files);
 
     // if (files.uploadOnlyAudio) {
