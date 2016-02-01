@@ -26,29 +26,47 @@ class Recorder {
             this.videoSelect.html('');
         }
 
-        MediaStreamTrack.getSources((infos) => {
-            console.log(this);
-            console.log('ugh');
-            for (var i = 0; i < infos.length; i++) {
-                var info = infos[i];
-                console.log(info);
+        navigator.mediaDevices.enumerateDevices().then((infos) => {
+            for (var info of infos) {
                 var option = $('<option>');
-                option.val(info.id);
+                option.val(info.deviceId);
                 var options;
-                if (info.kind === 'audio') {
+                if (info.kind === 'audioinput') {
                     options = this.audioSelect.find('option');
-                    option.text(info.label || 'microphone ' + (options.length + 1));
+                    option.text(info.label || 'Microphone ' + (options.length + 1));
                     this.audioSelect.append(option);
                 } else if (info.kind === 'video') {
                     options = this.videoSelect.find('option');
-                    option.text(info.label || 'camera ' + (options.length + 1));
-                    this.videoSelect.append(option);
+                    option.text(info.label || 'Microphone ' + (options.length + 1));
                 } else {
                     console.log('Some other kind of source:', info);
                 }
-                i++;
             }
         });
+
+        // MediaStreamTrack.getSources((infos) => {
+        //     console.log(this);
+        //     console.log('ugh');
+        //     for (var i = 0; i < infos.length; i++) {
+        //         var info = infos[i];
+        //         console.log(info);
+        //         var option = $('<option>');
+        //         option.val(info.id);
+        //         var options;
+        //         if (info.kind === 'audio') {
+        //             options = this.audioSelect.find('option');
+        //             option.text(info.label || 'microphone ' + (options.length + 1));
+        //             this.audioSelect.append(option);
+        //         } else if (info.kind === 'video') {
+        //             options = this.videoSelect.find('option');
+        //             option.text(info.label || 'camera ' + (options.length + 1));
+        //             this.videoSelect.append(option);
+        //         } else {
+        //             console.log('Some other kind of source:', info);
+        //         }
+        //         i++;
+        //     }
+        // });
     }
 
     setHandlers() {
