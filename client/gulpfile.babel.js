@@ -53,13 +53,6 @@ const argv = yargs.options({
         default: false,
         describe: 'Bundles the -c and -z switches.',
         type: 'boolean'
-    },
-    b: {
-        alias: 'build',
-        demand: false,
-        default: false,
-        describe: 'Runs build tasks before packaging.',
-        type: 'boolean'
     }
 }).argv;
 
@@ -148,10 +141,6 @@ gulp.task('zip-clean', () => {
 
 gulp.task('package', (cb) => {
     var tasks = [];
-
-    if (argv.build) {
-        tasks.push('build');
-    }
 
     if (argv.release) {
         tasks = tasks.concat(['package-clean', 'package-make', 'zip-make', 'zip-clean']);
