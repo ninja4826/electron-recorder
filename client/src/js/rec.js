@@ -35,9 +35,10 @@ class Recorder {
                     options = this.audioSelect.find('option');
                     option.text(info.label || 'Microphone ' + (options.length + 1));
                     this.audioSelect.append(option);
-                } else if (info.kind === 'video') {
+                } else if (info.kind === 'videoinput') {
                     options = this.videoSelect.find('option');
-                    option.text(info.label || 'Microphone ' + (options.length + 1));
+                    option.text(info.label || 'Camera ' + (options.length + 1));
+                    this.videoSelect.append(option);
                 } else {
                     console.log('Some other kind of source:', info);
                 }
