@@ -12,7 +12,7 @@ var app = express()
     })).use(bodyParser.json({
         limit: '5gb'
     })).use(function(req, res, next) {
-        console.log(JSON.stringify(req.body, null, 2));
+        // console.log(JSON.stringify(req.body, null, 2));
         next();
     }).use('/', router.router);
 

@@ -29,7 +29,7 @@ function merge(response, files) {
 }
 
 function _upload(response, file) {
-    console.log(file);
+    // console.log(file);
     if (!file) return;
     var objCheck = (obj, str) => (Object.keys(obj).indexOf(str) > -1);
     if (objCheck(file, 'audio') || objCheck(file, 'video')) {
@@ -71,11 +71,16 @@ router.post('/upload', (req, res) => {
     }
 
     if ('audio' in files || 'video' in files) {
-        merge(res, files);
+        // merge(res, files);
     }
     if ('contents' in files) {
         upload(res, files);
     }
+
+    res.json({
+        audio: files.audio.name,
+        video: files.video.name
+    });
     // _upload(res, files);
 
     // if (files.uploadOnlyAudio) {

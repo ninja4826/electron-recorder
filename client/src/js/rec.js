@@ -108,12 +108,12 @@ class Recorder {
         var fileName = this.slugify(config.get('Client.bandName'));
         var files = {
             audio: {
-                name: fileName + '.webm',
+                name: fileName + '-audio.wav',
                 type: 'video/webm',
                 contents: audioDataURL
             },
             video: {
-                name: fileName + '.webm',
+                name: fileName + '-video.webm',
                 type: 'video/webm',
                 contents: videoDataURL
             }
