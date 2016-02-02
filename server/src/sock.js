@@ -16,11 +16,6 @@ class SockListener {
 
     setupSocket() {
         console.log('A user has connected.');
-        // this.socket.on('file-upload', function(files) {
-        //     console.log(JSON.stringify(debugUtils.getKeys(files), null, 2));
-        //     // TODO: Handle file part upload.
-        // });
-
         this.socket.on('message', function(data) {
             console.log(JSON.stringify(debugUtils.getKeys(data), null, 2));
         });
@@ -35,6 +30,7 @@ class SockListener {
         });
 
         this.socket.on('stop-recording', (data) => {
+            console.log('Recording has stopped.');
             var jsonObj = {
                 endTime: data.time,
                 startTime: this.startTime,
@@ -44,6 +40,7 @@ class SockListener {
         });
 
         this.socket.on('stream-sent', (data) => {
+            console.log('Stream has been sent.');
             this.files.audio.push({
                 fileName: this.writeToDisk(data.audio, data.part),
                 time: data.time
