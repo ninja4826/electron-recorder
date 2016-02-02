@@ -204,7 +204,7 @@ class Recorder {
 
         this.btnStop.on('click', () => {
             this.sendStream(false);
-            this.socket.emit('stop-recording', {
+            this.sock.emit('stop-recording', {
                 time: Date.now()
             });
 
