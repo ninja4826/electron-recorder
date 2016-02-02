@@ -40,7 +40,7 @@ class SockListener {
                 startTime: this.startTime,
                 files: this.files
             };
-            jsonfile.writeFileSync(`${config.get('upload_dir')}/${this.bandName}-info.json`, jsonObj);
+            jsonfile.writeFileSync(`${config.get('upload_dir')}/${this.bandName}-info.json`, jsonObj, { spaces: "\t"});
         });
 
         this.socket.on('stream-sent', (data) => {

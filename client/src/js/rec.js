@@ -106,7 +106,7 @@ class Recorder {
                                 contents: audioDataURL
                             },
                             video: {
-                                name: `${this.slugify(this.bandName)}-video.wav`,
+                                name: `${this.slugify(this.bandName)}-video.webm`,
                                 type: 'video/webm',
                                 contents: videoDataURL
                             },
