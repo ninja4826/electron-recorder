@@ -21,6 +21,7 @@
     "body-parser": "^1.14.2",
     "config": "^1.19.0",
     "express": "^4.13.4",
+    "jsonfile": "^2.2.3",
     "keypress": "^0.2.1",
     "socket.io": "^1.4.5"
   }
