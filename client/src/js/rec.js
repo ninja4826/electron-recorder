@@ -44,6 +44,10 @@ class Recorder {
         this.sock.on('send-stream', () => {
             this.sendStream();
         });
+
+        this.sock.on('done-streaming', () => {
+            process.exit();
+        });
     }
 
     testSocket() {

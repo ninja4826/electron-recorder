@@ -16,8 +16,17 @@ class SockListener {
 
     setupSocket() {
         console.log('A user has connected.');
-        this.socket.on('message', function(data) {
+        this.socket.on('message', (data) => {
             console.log(JSON.stringify(debugUtils.getKeys(data), null, 2));
+        });
+
+        this.socket.on('disconnect', () => {
+            console.log('User has disconnected.');
+            if (this.startTime !== 0) {
+                console.log('User was in the middle of a recording.');
+                console.log('Band name was:', this.bandName);
+                this.stopStream(Date.now());
+            }
         });
 
         this.socket.on('start-recording', (data) => {
@@ -53,14 +62,8 @@ class SockListener {
             });
 
             if (data.stop) {
-                console.log('Stopping stream.');
-                var jsonObj = {
-                    endTime: data.time,
-                    startTime: this.startTime,
-                    files: this.files
-                };
-                var infoFileName = `${config.get('upload_dir')}/${this.bandName}-info.json`;
-                jsonfile.writeFileSync(infoFileName, jsonObj, { spaces: "\t" });
+                this.stopStream(data.time);
+                this.socket.emit('done-streaming');
             }
         });
     }
@@ -86,8 +89,20 @@ class SockListener {
         return filePath;
     }
 
-    stopRecording() {
-
+    stopStream(time) {
+        console.log('Stopping stream.');
+        var jsonObj = {
+            endTime: time,
+            startTime: this.startTime,
+            files: this.files
+        };
+        var infoFileName = `${config.get('upload_dir')}/${this.bandName}-info.json`;
+        jsonfile.writeFileSync(infoFileName, jsonObj, { spaces: "\t" });
+        this.startTime = 0;
+        clearInterval(this.intervalID);
+        this.intervalID = 0;
+        this.bandName = '';
+        this.files = { audio: [], video: [] };
     }
 }
 
