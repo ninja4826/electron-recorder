@@ -10,7 +10,8 @@
 var config = require('config');
 
 class Recorder {
-    constructor() {
+    constructor(remote) {
+        this.remote = remote;
         this.bandName = config.get('Client.bandName');
         document.title = this.bandName;
         $('#band-name').text(this.bandName);
@@ -46,7 +47,7 @@ class Recorder {
         });
 
         this.sock.on('done-streaming', () => {
-            process.exit();
+            this.remote.app.quit();
         });
     }
 
