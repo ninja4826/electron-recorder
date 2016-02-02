@@ -35,7 +35,7 @@ class SockListener {
             this.startTime = data.time;
             this.intervalID = setInterval(() => {
                 this.socket.emit('send-stream');
-            }, 60000);
+            }, 30000);
         });
 
         // this.socket.on('stop-recording', (data) => {
