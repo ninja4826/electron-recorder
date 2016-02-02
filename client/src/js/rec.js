@@ -166,7 +166,7 @@ class Recorder {
 
             this.btnStart.prop('disabled', true);
             this.startRecording();
-            this.sock.emit('started-recording', {
+            this.sock.emit('start-recording', {
                 name: this.slugify(this.bandName),
                 time: Date.now()
             });
