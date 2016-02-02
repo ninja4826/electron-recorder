@@ -8,6 +8,7 @@
     <!-- <script type="application/json" src="config/default.json"></script> -->
     <script src="lib/jquery.min.js" onload="$ = jQuery = module.exports;"></script>
     <script src="lib/RecordRTC.js"></script>
+    <script src="lib/socket.io-1.4.5.js"></script>
     <script src="node_modules/getusermedia/getusermedia.bundle.js"></script>
     <script src="dist/js/bundle.js"></script>
 </head>
@@ -19,7 +20,7 @@
                 <h2 id="band-name"></h2>
                 <div class="well">
                     <div class="row">
-                        <button type="button" id="refresh" class="btn btn-default" aria-label="Refresh">
+                        <!-- <button type="button" id="refresh" class="btn btn-default pull-right" aria-label="Refresh">
                             Refresh <span class="glyphicon glyphicon-refresh"></span>
                         </button>
                         <div class="input-group">
@@ -29,7 +30,30 @@
                         <div class="input-group">
                             <span class="input-group-addon" id="video-select-addon">Video Device</span>
                             <select type="select" class="form-control" id="video-select" aria-describedby="video-select-addon"></select>
+                        </div> -->
+
+
+                        <div class="input-group" id="audio-input-group">
+                            <span class="input-group-addon" id="audio-select-addon">Audio Device</span>
+                            <select type="select" class="form-control" id="audio-select" aria-describedby="audio-select-addon"></select>
+                            <!-- <span class="input-group-btn">
+                                <button type="button" class="btn btn-default refresh" aria-label="Refresh Audio" refresh-type="audio">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </span> -->
                         </div>
+                        <div class="input-group" id="video-input-group">
+                            <span class="input-group-addon" id="video-select-addon">Video Device</span>
+                            <select type="select" class="form-control" id="video-select" aria-describedby="video-select-addon"></select>
+                            <!-- <span class="input-group-btn">
+                                <button type="button" class="btn btn-default refresh" aria-label="Refresh Video" refresh-type="video">
+                                    <span class="glyphicon glyphicon-refresh"></span>
+                                </button>
+                            </span> -->
+                        </div>
+                    </div>
+                    <div class="row">
+                        <h4><b>Status</b>: <span id="status">Attempting to connect</span></h4>
                     </div>
                     <div class="row">
                         <video id="videoElement"></video>
@@ -48,7 +72,7 @@
                     </div>
                     <div class="row">
                         <div class="btn-group pull-right">
-                            <button id="record_start" type="button" class="btn btn-success center-block">Start</button>
+                            <button id="record_start" type="button" class="btn btn-success center-block" disabled="true">Start</button>
                             <button id="record_stop" type="button" class="btn btn-danger center-block" disabled="true">Stop</button>
                         </div>
                     </div>
@@ -66,7 +90,7 @@
         $(function() {
             rec = new Recorder();
             rec.getAvailableSources();
-            console.dir(RecordRTC);
+            // console.dir(RecordRTC);
         });
     </script>
 </body>

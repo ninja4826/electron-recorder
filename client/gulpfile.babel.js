@@ -53,6 +53,12 @@ const argv = yargs.options({
         default: false,
         describe: 'Bundles the -c and -z switches.',
         type: 'boolean'
+    },
+    t: {
+        alias: 'test',
+        demand: false,
+        default: false,
+        describe: 'Runs the package best suited for current arch'
     }
 }).argv;
 
@@ -121,6 +127,14 @@ gulp.task('package-make', (cb) => {
     });
 });
 
+gulp.task('package-run', (cb) => {
+    let arch = (process.arch === 'x64' ? 'x64' : 'ia32');
+    execSync('recorder.exe', {
+        cwd: path.join(process.cwd(), 'build', `recorder-win32-${arch}`)
+    });
+    cb();
+});
+
 gulp.task('zip-make', (cb) => {
     let builds = glob.sync('build/recorder-win32-*');
     var arch;
@@ -147,7 +161,9 @@ gulp.task('package', (cb) => {
     } else {
         if (argv.clean) tasks.push('package-clean');
         tasks.push('package-make');
-        if (argv.zip || argv.no_zip_clean) {
+        if (argv.test) {
+            tasks.push('package-run');
+        } else if (argv.zip || argv.no_zip_clean) {
             tasks.push('zip-make');
             if (!argv.no_zip_clean) {
                 tasks.push('zip-clean');

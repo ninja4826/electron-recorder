@@ -1,11 +1,20 @@
-// import test from './test';
+/* globals navigator */
+/* globals document */
+/* globals $ */
+/* globals io */
+/* globals alert */
+/* globals window */
+/* globals RecordRTC */
+/* globals getUserMedia */
+
 var config = require('config');
 
 class Recorder {
     constructor() {
-        var bandName = config.get('Client.bandName');
-        document.title = bandName;
-        $('#band-name').text(bandName);
+        this.bandName = config.get('Client.bandName');
+        document.title = this.bandName;
+        $('#band-name').text(this.bandName);
+        this.statusElement = $('span#status');
         this.videoElement = $('video#videoElement');
         this.btnStart = $('button.btn.btn-success#record_start');
         this.btnStop = $('button.btn.btn-danger#record_stop');
@@ -14,35 +23,119 @@ class Recorder {
         this.videoSelect = $('select#video-select');
         this.recordAudio = undefined;
         this.recordVideo = undefined;
-        console.log(this);
-
+        this.partCount = 0;
+        this.setSocketIO();
         this.setHandlers();
     }
 
-    getAvailableSources(refresh = false) {
+    setSocketIO() {
+        var sockURL = config.get('Client.host');
+        if (sockURL.split('.').length === 4) {
+            sockURL += `:${config.get('Client.port')}`;
+        }
 
-        if (refresh) {
+        this.sock = io(sockURL);
+
+        this.sock.on('connect', () => {
+            this.btnStart.prop('disabled', false);
+            this.statusElement.text('Connected');
+        });
+
+        this.sock.on('send-stream', () => {
+            this.sendStream();
+        });
+    }
+
+    testSocket() {
+        var obj = {
+            audio: {
+                type: 'audio/wav',
+                name: 'blah.wav'
+            },
+            video: {
+                type: 'video/webm',
+                name: 'blah.webm'
+            }
+        };
+
+        this.sock.emit('message', obj);
+    }
+
+    // getAvailableSources(refresh = false, types = {audio: true, video: true}) {
+    getAvailableSources(types = {audio: true, video: true}) {
+        var addOption = (info, select) => {
+            select.append($(`<option value="${info.deviceId}">${info.label}</option>`));
+        };
+
+        if (types.audio) {
             this.audioSelect.html('');
+        }
+        if (types.video) {
             this.videoSelect.html('');
         }
 
         navigator.mediaDevices.enumerateDevices().then((infos) => {
-            for (var info of infos) {
-                var option = $('<option>');
-                option.val(info.deviceId);
-                var options;
-                if (info.kind === 'audioinput') {
-                    options = this.audioSelect.find('option');
-                    option.text(info.label || 'Microphone ' + (options.length + 1));
-                    this.audioSelect.append(option);
-                } else if (info.kind === 'videoinput') {
-                    options = this.videoSelect.find('option');
-                    option.text(info.label || 'Camera ' + (options.length + 1));
-                    this.videoSelect.append(option);
-                } else {
-                    console.log('Some other kind of source:', info);
+            infos.forEach((info) => {
+                if (types.audio && info.kind === 'audioinput') {
+                    if (info.label && info.deviceId !== 'default' && info.deviceId !== 'communications') {
+                        addOption(info, this.audioSelect);
+                    }
+                } else if (types.video && info.kind === 'videoinput') {
+                    if (info.label) {
+                        addOption(info, this.videoSelect);
+                    }
                 }
-            }
+            });
+        });
+    }
+
+    sendStream(restart = true) {
+        this.partCount += 1;
+        var now = Date.now();
+        this.recordAudio.stopRecording(() => {
+            this.recordVideo.stopRecording(() => {
+                this.recordAudio.getDataURL((audioDataURL) => {
+                    this.recordVideo.getDataURL((videoDataURL) => {
+                        if (restart) {
+                            this.startRecording();
+                        }
+                        this.sock.emit('stream-sent', {
+                            audio: {
+                                name: `${this.slugify(this.bandName)}-audio.wav`,
+                                type: 'video/webm',
+                                contents: audioDataURL
+                            },
+                            video: {
+                                name: `${this.slugify(this.bandName)}-video.wav`,
+                                type: 'video/webm',
+                                contents: videoDataURL
+                            },
+                            part: this.partCount,
+                            time: now
+                        });
+                    });
+                });
+            });
+        });
+    }
+
+    startRecording() {
+        getUserMedia(this.getSelectedSources(), (err, stream) => {
+            this.recordVideo = RecordRTC(stream, { type: 'video' });
+            this.recordAudio = RecordRTC(stream, {
+                bufferSize: 16384,
+                onAudioProcessStarted: () => {
+                    this.recordVideo.startRecording();
+
+                    this.videoElement.attr('src', window.URL.createObjectURL(stream));
+                    this.videoElement.get(0).play();
+
+                    this.videoElement.get(0).muted = true;
+                    this.videoElement.get(0).controls = false;
+                }
+            });
+            this.recordAudio.startRecording();
+            this.btnStop.prop('disabled', false);
         });
     }
 
@@ -53,9 +146,14 @@ class Recorder {
             this.getAvailableSources(true);
         });
 
-        this.btnStart.on('click', () => {
+        $(document).on('click', 'button.refresh', (e) => {
+            var btn = $(e.currentTarget);
+            var refType = btn.attr('refresh-type');
+            var obj = (refType === 'audio' ? {audio:true,video:false} : {audio:false,video:true});
+            this.getAvailableSources(true, obj);
+        });
 
-            console.log(this.audioSelect);
+        this.btnStart.on('click', () => {
             if (this.audioSelect.find('option').length < 1) {
                 alert('You have no audio devices :(');
                 return;
@@ -67,45 +165,75 @@ class Recorder {
             }
 
             this.btnStart.prop('disabled', true);
-            getUserMedia(this.getSelectedSources(), (err, stream) => {
-                this.videoElement.attr('src', window.URL.createObjectURL(stream));
-                this.videoElement.get(0).play();
-                this.recordAudio = RecordRTC(stream, { bufferSize: 16384 });
-                this.recordVideo = RecordRTC(stream, { type: 'video' });
-
-                this.recordAudio.startRecording();
-                this.recordVideo.startRecording();
-                this.btnStop.prop('disabled', false);
+            this.startRecording();
+            this.sock.emit('started-recording', {
+                name: this.bandName,
+                time: Date.now()
             });
+
+            // console.log(this.audioSelect);
+            // if (this.audioSelect.find('option').length < 1) {
+            //     alert('You have no audio devices :(');
+            //     return;
+            // }
+            // console.log(this.videoSelect);
+            // if (this.videoSelect.find('option').length < 1) {
+            //     alert('You have no video devices :(');
+            //     return;
+            // }
+            //
+            // this.btnStart.prop('disabled', true);
+            // getUserMedia(this.getSelectedSources(), (err, stream) => {
+            //     this.recordVideo = RecordRTC(stream, { type: 'video' });
+            //     this.recordAudio = RecordRTC(stream, {
+            //         bufferSize: 16384,
+            //         onAudioProcessStarted: () => {
+            //             this.recordVideo.startRecording();
+            //
+            //             this.videoElement.attr('src', window.URL.createObjectURL(stream));
+            //             this.videoElement.get(0).play();
+            //
+            //             this.videoElement.get(0).muted = true;
+            //             this.videoElement.get(0).controls = false;
+            //         }
+            //     });
+            //     this.recordAudio.startRecording();
+            //     this.btnStop.prop('disabled', false);
+            // });
         });
 
         this.btnStop.on('click', () => {
-            var onStopRecording = () => {
-                console.log('onStopRecording() has been called.');
-                this.recordAudio.getDataURL((audioDataURL) => {
-                    console.log('audioDataURL:', audioDataURL);
-                    this.recordVideo.getDataURL((videoDataURL) => {
-                        console.log('videoDataURL:', videoDataURL);
-                        this.postFiles(audioDataURL, videoDataURL);
-                    });
-                });
-            };
-
-            this.btnStart.prop('disabled', false);
-            this.btnStop.prop('disabled', true);
-
-            this.recordAudio.stopRecording(() => {
-                this.recordVideo.stopRecording(() => {
-                    console.log('onStopRecording() is about to be called.');
-                    onStopRecording();
-                });
+            this.sendStream(false);
+            this.socket.emit('stop-recording', {
+                time: Date.now()
             });
+
+            // var onStopRecording = () => {
+            //     console.log('onStopRecording() has been called.');
+            //     this.recordAudio.getDataURL((audioDataURL) => {
+            //         console.log('audioDataURL:', audioDataURL);
+            //         this.recordVideo.getDataURL((videoDataURL) => {
+            //             console.log('videoDataURL:', videoDataURL);
+            //             this.postFiles(audioDataURL, videoDataURL);
+            //         });
+            //     });
+            // };
+            //
+            // this.btnStart.prop('disabled', false);
+            // this.btnStop.prop('disabled', true);
+            //
+            // this.recordAudio.stopRecording(() => {
+            //     this.recordVideo.stopRecording(() => {
+            //         console.log('onStopRecording() is about to be called.');
+            //         onStopRecording();
+            //     });
+            // });
         });
     }
 
     postFiles(audioDataURL, videoDataURL) {
         console.log('Posting files.');
-        var fileName = this.slugify(config.get('Client.bandName'));
+        var fileName = this.slugify(this.bandName);
         var files = {
             audio: {
                 name: fileName + '-audio.wav',
