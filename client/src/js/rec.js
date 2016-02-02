@@ -89,14 +89,14 @@ class Recorder {
         });
     }
 
-    sendStream(restart = true) {
+    sendStream(stop = false) {
         this.partCount += 1;
         var now = Date.now();
         this.recordAudio.stopRecording(() => {
             this.recordVideo.stopRecording(() => {
                 this.recordAudio.getDataURL((audioDataURL) => {
                     this.recordVideo.getDataURL((videoDataURL) => {
-                        if (restart) {
+                        if (!stop) {
                             this.startRecording();
                         }
                         this.sock.emit('stream-sent', {
@@ -111,7 +111,8 @@ class Recorder {
                                 contents: videoDataURL
                             },
                             part: this.partCount,
-                            time: now
+                            time: now,
+                            stop: stop
                         });
                     });
                 });
@@ -204,9 +205,9 @@ class Recorder {
 
         this.btnStop.on('click', () => {
             this.sendStream(false);
-            this.sock.emit('stop-recording', {
-                time: Date.now()
-            });
+            // this.sock.emit('stop-recording', {
+            //     time: Date.now()
+            // });
             this.btnStart.prop('disabled', false);
             this.btnStop.prop('disabled', true);
 

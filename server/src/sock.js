@@ -29,26 +29,39 @@ class SockListener {
             }, 300000);
         });
 
-        this.socket.on('stop-recording', (data) => {
-            console.log('Recording has stopped.');
-            var jsonObj = {
-                endTime: data.time,
-                startTime: this.startTime,
-                files: this.files
-            };
-            jsonfile.writeFileSync(`${config.get('upload_dir')}/${this.bandName}-info.json`, jsonObj, { spaces: "\t"});
-        });
+        // this.socket.on('stop-recording', (data) => {
+        //     console.log('Recording has stopped.');
+        //     var jsonObj = {
+        //         endTime: data.time,
+        //         startTime: this.startTime,
+        //         files: this.files
+        //     };
+        //     jsonfile.writeFileSync(`${config.get('upload_dir')}/${this.bandName}-info.json`, jsonObj, { spaces: "\t"});
+        // });
 
         this.socket.on('stream-sent', (data) => {
             console.log('Stream has been sent.');
             this.files.audio.push({
                 fileName: this.writeToDisk(data.audio, data.part),
-                time: data.time
+                time: data.time,
+                part: data.part
             });
             this.files.video.push({
                 fileName: this.writeToDisk(data.video, data.part),
-                time: data.time
+                time: data.time,
+                part: data.part
             });
+
+            if (data.stop) {
+                console.log('Stopping stream.');
+                var jsonObj = {
+                    endTime: data.time,
+                    startTime: this.startTime,
+                    files: this.files
+                };
+                var infoFileName = `${config.get('upload_dir')}/${this.bandName}-info.json`;
+                jsonfile.writeFileSync(infoFileName, jsonObj, { spaces: "\t" });
+            }
         });
     }
 
@@ -69,7 +82,12 @@ class SockListener {
         dataURL = dataURL.split(',').pop();
         fileBuffer = new Buffer(dataURL, "base64");
         fs.writeFileSync(filePath, fileBuffer);
+        console.log(filePath, 'has been written.');
         return filePath;
+    }
+
+    stopRecording() {
+
     }
 }
 
