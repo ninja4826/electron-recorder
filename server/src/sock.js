@@ -5,6 +5,7 @@ import * as debugUtils from './debugUtils';
 
 class SockListener {
     constructor(socket) {
+        console.log('Creating new SockListener');
         this.socket = socket;
         this.intervalID = 0;
         this.bandName = '';
