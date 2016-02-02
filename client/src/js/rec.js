@@ -207,6 +207,8 @@ class Recorder {
             this.sock.emit('stop-recording', {
                 time: Date.now()
             });
+            this.btnStart.prop('disabled', false);
+            this.btnStop.prop('disabled', true);
 
             // var onStopRecording = () => {
             //     console.log('onStopRecording() has been called.');
