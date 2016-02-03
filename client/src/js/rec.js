@@ -63,7 +63,7 @@ class Recorder {
             }
         };
 
-        this.sock.emit('message', obj);
+        this.sock.emit('testing-socket', obj);
     }
 
     // getAvailableSources(refresh = false, types = {audio: true, video: true}) {
@@ -93,8 +93,9 @@ class Recorder {
             });
         });
     }
-
-    sendStream(stop = false) {
+    //
+    // sendStream(stop = false) {
+    sendStreamBackup(stop = false) {
         this.partCount += 1;
         var now = Date.now();
         this.recordAudio.stopRecording(() => {
@@ -106,12 +107,12 @@ class Recorder {
                         }
                         this.sock.emit('stream-sent', {
                             audio: {
-                                name: `${this.slugify(this.bandName)}-audio.wav`,
-                                type: 'video/webm',
+                                name: `${this.slugify(this.bandName)}-audio`,
+                                type: 'audio/wav',
                                 contents: audioDataURL
                             },
                             video: {
-                                name: `${this.slugify(this.bandName)}-video.webm`,
+                                name: `${this.slugify(this.bandName)}-video`,
                                 type: 'video/webm',
                                 contents: videoDataURL
                             },
@@ -120,6 +121,48 @@ class Recorder {
                             stop: stop
                         });
                     });
+                });
+            });
+        });
+    }
+
+    // sendStreamTest(stop = false) {
+    sendStream(stop = false) {
+        this.partCount += 1;
+        var now = Date.now();
+        this.recordAudio.pauseRecording();
+        this.recordVideo.pauseRecording();
+        this.recordAudio.getDataURL((audioDataURL) => {
+            this.recordVideo.getDataURL((videoDataURL) => {
+                this.recordAudio.clearRecordedData();
+                this.recordVideo.clearRecordedData();
+                if (!stop) {
+                    this.recordAudio.resumeRecording();
+                    this.recordVideo.resumeRecording();
+                }
+                // this.sock.emit('stream-sent', {
+                //     audio: {
+                //         name: `${this.slugify(this.bandName)}-audio.wav`,
+                //         type: 'video/webm',
+                //         contents: audioDataURL
+                //     },
+                //     video: {
+                //         name: `${this.slugify(this.bandName)}-video.webm`,
+                //         type: 'video/webm',
+                //         contents: videoDataURL
+                //     },
+                //     part: this.partCount,
+                //     time: now,
+                //     stop: stop
+                // });
+
+                this.sock.emit('stream-sent', {
+                    audio: audioDataURL,
+                    video: videoDataURL,
+                    band: this.bandName,
+                    part: this.partCount,
+                    time: now,
+                    stop: stop
                 });
             });
         });
@@ -148,9 +191,9 @@ class Recorder {
     setHandlers() {
         console.log(this);
 
-        this.btnRefresh.on('click', () => {
-            this.getAvailableSources(true);
-        });
+        // this.btnRefresh.on('click', () => {
+        //     this.getAvailableSources(true);
+        // });
 
         $(document).on('click', 'button.refresh', (e) => {
             var btn = $(e.currentTarget);
