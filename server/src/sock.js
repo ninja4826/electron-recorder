@@ -130,12 +130,12 @@ class SockListener {
         var audioPath = `${this.dirName}/${audioFileName}`;
         var videoPath = `${this.dirName}/${videoFileName}`;
         this.files.audio.push({
-            fileName: audioFileName,
+            name: audioFileName,
             time: data.time,
             part: data.part
         });
         this.files.video.push({
-            fileName: videoFileName,
+            name: videoFileName,
             time: data.time,
             part: data.part
         });
@@ -150,8 +150,21 @@ class SockListener {
             startTime: this.startTime,
             files: this.files
         };
-        var infoFileName = `${config.get('upload_dir')}/${this.bandName}-info.json`;
+        // var infoFileName = `${config.get('upload_dir')}/${this.bandName}-info.json`;
+        var infoFileName = `${this.dirName}/info.json`;
         jsonfile.writeFileSync(infoFileName, jsonObj, { spaces: "\t" });
+        var ffmpegData = {audio: '', video: ''};
+
+        var audioFiles = this.files.audio.sort((a, b) => a.part - b.part);
+        var videoFiles = this.files.video.sort((a, b) => a.part - b.part);
+        for (var audioFile of audioFiles) {
+            ffmpegData.audio += (`file '${audioFile.name}'`+"\n");
+        }
+        for (var videoFile of videoFiles) {
+            ffmpegData.video += (`file '${videoFile.name}'`+"\n");
+        }
+        fs.writeFileSync(`${this.dirName}/ffmpeg_audio.txt`, ffmpegData.audio);
+        fs.writeFileSync(`${this.dirName}/ffmpeg_video.txt`, ffmpegData.video);
         this.startTime = 0;
         clearInterval(this.intervalID);
         this.intervalID = 0;
