@@ -193,7 +193,19 @@ class RecorderNew {
         //     stop: rec.isStopping
         // });
         // rec.emitStream(blobs, () => {});
-        setTimeout(() => {
+        // setTimeout(() => {
+        //     rec.partCount += 1;
+        //     rec.sock.emit('stream-sent-new', {
+        //         audio: blobs.audio,
+        //         video: blobs.video,
+        //         band: rec.slugify(rec.bandName),
+        //         part: rec.partCount,
+        //         time: Date.now(),
+        //         stop: rec.isStopping
+        //     });
+        // }, 1);
+
+        return new Promise((resolve) => {
             rec.partCount += 1;
             rec.sock.emit('stream-sent-new', {
                 audio: blobs.audio,
@@ -203,7 +215,8 @@ class RecorderNew {
                 time: Date.now(),
                 stop: rec.isStopping
             });
-        }, 1);
+            resolve();
+        });
     }
 
     getSelectedSources() {
