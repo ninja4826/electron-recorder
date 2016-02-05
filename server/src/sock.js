@@ -134,7 +134,7 @@ class SockListener {
                 this.writeToDisk(data, 'buffer');
                 if (data.stop) {
                     this.stopStream(data.time);
-                    // this.socket.emit('done-streaming');
+                    this.socket.emit('done-streaming');
                 }
             }
         });
