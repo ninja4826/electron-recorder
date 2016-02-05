@@ -7,9 +7,12 @@
     <link rel="stylesheet" href="./dist/css/style.css">
     <!-- <script type="application/json" src="config/default.json"></script> -->
     <script src="lib/jquery.min.js" onload="$ = jQuery = module.exports;"></script>
-    <script src="lib/RecordRTC.js"></script>
+    <!-- <script src="lib/RecordRTC.js"></script> -->
+    <!-- <script src="node_modules/msr/MediaStreamRecorder.js"></script> -->
     <script src="lib/socket.io-1.4.5.js"></script>
     <script src="node_modules/getusermedia/getusermedia.bundle.js"></script>
+    <!-- <script src="lib/MediaStreamRecorder.min.js"></script> -->
+    <script src="lib/MediaStreamRecorder.js"></script>
     <script src="dist/js/bundle.js"></script>
 </head>
 <body>
@@ -88,8 +91,11 @@
     <script>
         var rec;
         $(function() {
+            console.dir(MediaStreamRecorder);
+            console.dir(MultiStreamRecorder);
             var remote = require('remote');
-            rec = new Recorder(remote);
+            // rec = new Recorder(remote);
+            rec = new RecorderNew(remote);
             rec.getAvailableSources();
             // console.dir(RecordRTC);
         });

@@ -1,6 +1,9 @@
+/* globals FileReader */
+
 import fs from 'fs';
 import config from 'config';
 import jsonfile from 'jsonfile';
+import FileReader from 'filereader';
 import * as debugUtils from './debugUtils';
 
 // function slugify(text) {
@@ -11,6 +14,15 @@ import * as debugUtils from './debugUtils';
 //         .replace(/^-+/, '')
 //         .replace(/-+$/, '');
 // }
+
+function blobToBase64(blob, cb) {
+    var reader = new FileReader();
+    reader.onload = () => {
+        var dataURL = reader.result;
+        cb(dataURL);
+    };
+    reader.readAsDataURL(blob);
+}
 
 class SockListener {
     constructor(socket) {
@@ -44,9 +56,9 @@ class SockListener {
             console.log('Recording has started.');
             this.bandName = data.name;
             this.startTime = data.time;
-            this.intervalID = setInterval(() => {
-                this.socket.emit('send-stream');
-            }, 30000);
+            // this.intervalID = setInterval(() => {
+            //     this.socket.emit('send-stream');
+            // }, 30000);
             var dirName = `${config.get('upload_dir')}/${this.startTime}-${this.bandName}`;
             this.dirName = dirName;
             fs.mkdirSync(`${dirName}`);
@@ -71,26 +83,58 @@ class SockListener {
         //     }
         // });
 
+        // this.socket.on('stream-sent', (data) => {
+        //     console.log('Stream has been sent.');
+        //     if (data.band == this.bandName) {
+        //         // this.files.audio.push({
+        //         //     fileName: this.writeToDisk(data.audio, data.part),
+        //         //     time: data.time,
+        //         //     part: data.part
+        //         // });
+        //         // this.files.video.push({
+        //         //     fileName: this.writeToDisk(data.video, data.part),
+        //         //     time: data.time,
+        //         //     part: data.part
+        //         // });
+        //
+        //         this.writeToDisk(data);
+        //
+        //
+        //         if (data.stop) {
+        //             this.stopStream(data.time);
+        //             this.socket.emit('done-streaming');
+        //         }
+        //     }
+        // });
+
         this.socket.on('stream-sent', (data) => {
             console.log('Stream has been sent.');
             if (data.band == this.bandName) {
-                // this.files.audio.push({
-                //     fileName: this.writeToDisk(data.audio, data.part),
-                //     time: data.time,
-                //     part: data.part
-                // });
-                // this.files.video.push({
-                //     fileName: this.writeToDisk(data.video, data.part),
-                //     time: data.time,
-                //     part: data.part
-                // });
-
                 this.writeToDisk(data);
-
-
                 if (data.stop) {
                     this.stopStream(data.time);
                     this.socket.emit('done-streaming');
+                }
+            }
+        });
+
+        this.socket.on('stream-sent-new', (data) => {
+            console.log('Stream has been sent (new).');
+            console.log('My Band:', this.bandName);
+            console.log('Sent Band:', data.band);
+            console.log('Part:', data.part);
+            console.log('Time:', data.time);
+            console.log('Stop:', data.stop);
+            console.log('Type of Audio:', typeof data.audio);
+            console.log('Audio Is Buffer?:', data.audio instanceof Buffer);
+            console.log('Type of Video:', typeof data.video);
+            console.log('Video Is Buffer?:', data.video instanceof Buffer);
+            if (data.band == this.bandName) {
+                // this.writeToDisk(data, 'blob');
+                this.writeToDisk(data, 'buffer');
+                if (data.stop) {
+                    this.stopStream(data.time);
+                    // this.socket.emit('done-streaming');
                 }
             }
         });
@@ -118,11 +162,22 @@ class SockListener {
         return filePath;
     }
 
-    writeToDisk(data) {
-        var saveFile = (dataURL, filePath) => {
-            dataURL = dataURL.split(',').pop();
-            var fileBuffer = new Buffer(dataURL, "base64");
-            fs.writeFileSync(filePath, fileBuffer);
+    writeToDisk(data, type = 'base64') {
+        var saveBuffer = (buf, filePath) => {
+            fs.writeFileSync(filePath, buf);
+        };
+
+        var saveBase64 = (dataURL, filePath) => {
+            // dataURL = dataURL.split(',').pop();
+            // var fileBuffer = new Buffer(dataURL.split(',').pop(), "base64");
+            // fs.writeFileSync(filePath, new Buffer(dataURL.split(',').pop(), "base64"));
+            saveBuffer(new Buffer(dataURL.split(',').pop(), "base64"), filePath);
+        };
+
+        var saveBlob = (blob, filePath) => {
+            blobToBase64(blob, (dataURL) => {
+                saveBase64(dataURL, filePath);
+            });
         };
 
         var audioFileName = `part-${data.part}-audio.wav`;
@@ -139,8 +194,24 @@ class SockListener {
             time: data.time,
             part: data.part
         });
-        saveFile(data.audio, audioPath);
-        saveFile(data.video, videoPath);
+        // saveBase64(data.audio, audioPath);
+        // saveBase64(data.video, videoPath);
+        switch (type) {
+            case "blob":
+                saveBlob(data.audio, audioPath);
+                saveBlob(data.video, videoPath);
+                break;
+            case "base64":
+                saveBase64(data.audio, audioPath);
+                saveBase64(data.video, videoPath);
+                break;
+            case "buffer":
+                saveBuffer(data.audio, audioPath);
+                saveBuffer(data.video, videoPath);
+                break;
+        }
+        // saveBlob(data.audio, audioPath);
+        // saveBlob(data.video, videoPath);
     }
 
     stopStream(time) {

@@ -25,6 +25,11 @@ class Recorder {
         this.recordAudio = undefined;
         this.recordVideo = undefined;
         this.partCount = 0;
+
+        this.startRecTime = 0;
+        this.startRecOtherTime = 0;
+        this.endRecTime = 0;
+
         this.setSocketIO();
         this.setHandlers();
     }
@@ -103,19 +108,30 @@ class Recorder {
                 this.recordAudio.getDataURL((audioDataURL) => {
                     this.recordVideo.getDataURL((videoDataURL) => {
                         if (!stop) {
-                            this.startRecording();
+                            // this.startRecording();
+                            console.warn('Testing RecordRTC.startRecording() time.');
+                            this.startRecOtherTime = now;
+                            this.recordAudio.startRecording();
                         }
+                        // this.sock.emit('stream-sent', {
+                        //     audio: {
+                        //         name: `${this.slugify(this.bandName)}-audio`,
+                        //         type: 'audio/wav',
+                        //         contents: audioDataURL
+                        //     },
+                        //     video: {
+                        //         name: `${this.slugify(this.bandName)}-video`,
+                        //         type: 'video/webm',
+                        //         contents: videoDataURL
+                        //     },
+                        //     part: this.partCount,
+                        //     time: now,
+                        //     stop: stop
+                        // });
                         this.sock.emit('stream-sent', {
-                            audio: {
-                                name: `${this.slugify(this.bandName)}-audio`,
-                                type: 'audio/wav',
-                                contents: audioDataURL
-                            },
-                            video: {
-                                name: `${this.slugify(this.bandName)}-video`,
-                                type: 'video/webm',
-                                contents: videoDataURL
-                            },
+                            audio: audioDataURL,
+                            video: videoDataURL,
+                            band: this.bandName,
                             part: this.partCount,
                             time: now,
                             stop: stop
@@ -130,35 +146,22 @@ class Recorder {
     sendStream(stop = false) {
         this.partCount += 1;
         var now = Date.now();
-        this.recordAudio.pauseRecording();
-        this.recordVideo.pauseRecording();
-        this.recordAudio.getDataURL((audioDataURL) => {
-            this.recordVideo.getDataURL((videoDataURL) => {
+        this.recordAudio.stopRecording(() => {
+            this.recordVideo.stopRecording(() => {
+                var audioBlob = this.recordAudio.getBlob();
+                var videoBlob = this.recordVideo.getBlob();
+                console.log('Audio Blob type:', typeof audioBlob);
+                console.log('Audio Blob keys:', Object.keys(audioBlob));
                 this.recordAudio.clearRecordedData();
                 this.recordVideo.clearRecordedData();
                 if (!stop) {
-                    this.recordAudio.resumeRecording();
-                    this.recordVideo.resumeRecording();
+                    console.warn('Testing RecordRTC.startRecording() time.');
+                    this.startRecOtherTime = Date.now();
+                    this.recordAudio.startRecording();
                 }
-                // this.sock.emit('stream-sent', {
-                //     audio: {
-                //         name: `${this.slugify(this.bandName)}-audio.wav`,
-                //         type: 'video/webm',
-                //         contents: audioDataURL
-                //     },
-                //     video: {
-                //         name: `${this.slugify(this.bandName)}-video.webm`,
-                //         type: 'video/webm',
-                //         contents: videoDataURL
-                //     },
-                //     part: this.partCount,
-                //     time: now,
-                //     stop: stop
-                // });
-
                 this.sock.emit('stream-sent', {
-                    audio: audioDataURL,
-                    video: videoDataURL,
+                    audio: audioBlob,
+                    video: videoBlob,
                     band: this.bandName,
                     part: this.partCount,
                     time: now,
@@ -169,6 +172,10 @@ class Recorder {
     }
 
     startRecording() {
+        if (this.partCount > 0) {
+            console.warn('Testing Recorder.startRecording() time.');
+            this.startRecTime = Date.now();
+        }
         getUserMedia(this.getSelectedSources(), (err, stream) => {
             this.recordVideo = RecordRTC(stream, { type: 'video' });
             this.recordAudio = RecordRTC(stream, {
@@ -181,6 +188,11 @@ class Recorder {
 
                     this.videoElement.get(0).muted = true;
                     this.videoElement.get(0).controls = false;
+                    if (this.partCount > 0) {
+                        this.endRecTime = Date.now();
+                        var actualStart = (this.startRecTime !== 0 ? this.startRecTime : this.startRecOtherTime);
+                        console.warn(`Took ${this.endRecTime - actualStart} ms.`);
+                    }
                 }
             });
             this.recordAudio.startRecording();
