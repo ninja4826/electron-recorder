@@ -155,6 +155,19 @@ class RecorderNew {
         });
     }
 
+    emitStream(blobs, cb) {
+        rec.partCount += 1;
+        this.sock.emit('stream-sent-new', {
+            audio: blobs.audio,
+            video: blobs.video,
+            band: rec.slugify(rec.bandName),
+            part: rec.partCount,
+            time: Date.now(),
+            stop: rec.isStopping
+        });
+        cb();
+    }
+
 
     // sendStream(stop = false) {
     sendStream(blobs) {
@@ -168,19 +181,29 @@ class RecorderNew {
         //     stop: this.isStopping
         // });
 
-        rec.partCount += 1;
-        var audioURL = window.URL.createObjectURL(blobs.audio);
-        console.log(audioURL);
-        rec.sock.emit('stream-sent-new', {
-            audio: blobs.audio,
-            video: blobs.video,
-            // audio: window.URL.createObjectURL(blobs.audio),
-            // video: window.URL.createObjectURL(blobs.video),
-            band: rec.slugify(rec.bandName),
-            part: rec.partCount,
-            time: Date.now(),
-            stop: rec.isStopping
-        });
+        // rec.partCount += 1;
+        // rec.sock.emit('stream-sent-new', {
+        //     audio: blobs.audio,
+        //     video: blobs.video,
+        //     // audio: window.URL.createObjectURL(blobs.audio),
+        //     // video: window.URL.createObjectURL(blobs.video),
+        //     band: rec.slugify(rec.bandName),
+        //     part: rec.partCount,
+        //     time: Date.now(),
+        //     stop: rec.isStopping
+        // });
+        // rec.emitStream(blobs, () => {});
+        setTimeout(() => {
+            rec.partCount += 1;
+            rec.sock.emit('stream-sent-new', {
+                audio: blobs.audio,
+                video: blobs.video,
+                band: rec.slugify(rec.bandName),
+                part: rec.partCount,
+                time: Date.now(),
+                stop: rec.isStopping
+            });
+        }, 1);
     }
 
     getSelectedSources() {
